@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Chat Link Embedder Pro
 // @namespace    http://tampermonkey.net/
-// @version      2.5.1
+// @version      2.5.2
 // @description  Transforme les liens du chat Twitch en embeds propres et interactifs.
 // @author       VooDoo
 // @match        *://*.twitch.tv/*
@@ -18,7 +18,6 @@
 (function() {
     'use strict';
 
-    // Configuration avec valeurs par défaut
     const CONFIG = {
         EMBED_API_URL: 'https://api.the-coven.fr',
         MAX_RETRIES: 15,
@@ -32,10 +31,9 @@
         REQUEST_TIMEOUT: 10000
     };
 
-    // Système de logging amélioré
     const Logger = {
         levels: { ERROR: 0, WARN: 1, INFO: 2, DEBUG: 3 },
-        level: 2, // INFO par défaut
+        level: 2,
 
         setDebugMode(debug) {
             this.level = debug ? this.levels.DEBUG : this.levels.INFO;
@@ -60,7 +58,6 @@
         debug: function(msg, ...args) { this.log(3, msg, ...args); }
     };
 
-    // Système de stockage
     const Storage = {
         get(key, defaultValue) {
             try {
@@ -82,7 +79,6 @@
         }
     };
 
-    // Configuration utilisateur avec valeurs par défaut
     const USER_CONFIG = {
         embedStyle: Storage.get('embedStyle', 'dark-glass'),
         enableYouTube: Storage.get('enableYouTube', true),
@@ -93,22 +89,18 @@
         enableImages: Storage.get('enableImages', true),
         enableAllLinks: Storage.get('enableAllLinks', true),
         debugMode: Storage.get('debugMode', true),
-        // NOUVEAUX PARAMÈTRES IMAGES
         enableImageEmbeds: Storage.get('enableImageEmbeds', true),
         maxImageWidth: Storage.get('maxImageWidth', 300),
         maxImageHeight: Storage.get('maxImageHeight', 200),
-        // NOUVELLES OPTIONS AJOUTÉES
         enableGamesPlanet: Storage.get('enableGamesPlanet', true),
         enableKoFi: Storage.get('enableKoFi', true),
         enableEneba: Storage.get('enableEneba', true)
     };
 
-    // Mettre à jour le mode debug du logger
     Logger.setDebugMode(USER_CONFIG.debugMode);
 
     Logger.info('Script Twitch Chat Link Embedder Pro initializing...');
 
-    // Cache pour les sélecteurs fréquents
     const SELECTORS = {
         chat: [
             '.chat-scrollable-area__message-container',
@@ -125,14 +117,12 @@
         chatSettings: '[data-a-target="chat-settings"]'
     };
 
-    // Variables globales
     let chatObserver = null;
     let backupInterval = null;
     let currentChatContainer = null;
     let isInitialized = false;
     let optionsModal = null;
 
-    // Utilitaires
     const Utils = {
         debounce(func, wait) {
             let timeout;
@@ -197,12 +187,11 @@
         getScriptInfo() {
             return {
                 name: 'Twitch Chat Link Embedder Pro',
-                version: '2.5.1'
+                version: '2.5.2'
             };
         }
     };
 
-    // Gestionnaire de requêtes unifié avec cache et retry
     class RequestManager {
         constructor() {
             this.cache = new Map();
@@ -213,7 +202,6 @@
         async fetchWithCache(url, options = {}, parseAs = 'json') {
             const cacheKey = `${url}-${JSON.stringify(options)}-${parseAs}`;
 
-            // Évite les requêtes qui ont échoué récemment
             if (this.failedRequests.has(cacheKey)) {
                 const { timestamp } = this.failedRequests.get(cacheKey);
                 if (Date.now() - timestamp < 30000) {
@@ -222,12 +210,10 @@
                 this.failedRequests.delete(cacheKey);
             }
 
-            // Retourne la promesse existante si même requête en cours
             if (this.pendingRequests.has(cacheKey)) {
                 return this.pendingRequests.get(cacheKey);
             }
 
-            // Cache simple
             if (this.cache.has(cacheKey)) {
                 const { timestamp, data } = this.cache.get(cacheKey);
                 if (Date.now() - timestamp < CONFIG.CACHE_DURATION) {
@@ -323,37 +309,31 @@
 
     const requestManager = new RequestManager();
 
-    // Détecteurs de contenu
     const ContentDetectors = {
         youtube(url) {
             const urlString = url.href;
 
-            // 1️⃣ Playlist via /playlist?list=...
             const playlistMatch = url.search.match(/[?&]list=([a-zA-Z0-9_-]+)/);
             if (playlistMatch) {
                 return { type: 'playlist', id: playlistMatch[1] };
             }
 
-            // 2️⃣ Vidéo courte youtu.be/ID
             if (url.hostname.includes('youtu.be')) {
                 const videoId = url.pathname.split('/')[1];
                 return { type: 'video', id: videoId };
             }
 
-            // 3️⃣ Vidéo avec v=ID (et optionnellement list=ID)
             const videoMatch = url.search.match(/[?&]v=([^&#]+)/);
             if (videoMatch) {
                 return { type: 'video', id: videoMatch[1] };
             }
 
-            // 4️⃣ Chaîne ou utilisateur
             const path = url.pathname;
             if (path.startsWith('/@') || path.startsWith('/channel/') ||
                 path.startsWith('/c/') || path.startsWith('/user/') || /^\/[^/]+$/.test(path)) {
                 return { type: 'channel', id: this.extractYouTubeChannelId(url) };
             }
 
-            // 5️⃣ Cas inconnu
             return { type: 'unknown' };
         },
 
@@ -369,6 +349,11 @@
 
         twitch(url) {
             const path = url.pathname;
+
+            if (url.hostname === 'subs.twitch.tv') {
+                const subMatch = path.match(/^\/([a-zA-Z0-9_]+)$/i);
+                if (subMatch) return { type: 'sub', id: subMatch[1] };
+            }
 
             if (/^\/subs\/([a-zA-Z0-9_]+)$/i.test(path) || /^\/([a-zA-Z0-9_]+)\/subs?$/i.test(path)) {
                 return { type: 'sub', id: path.match(/\/([a-zA-Z0-9_]+)/)[1] };
@@ -392,13 +377,11 @@
         },
 
         steam(url) {
-            // Vérifier si c'est une page de jeu (app) ou autre (news, etc.)
             const appMatch = url.pathname.match(/^\/app\/(\d+)/);
             if (appMatch) {
                 return { type: 'game', id: appMatch[1] };
             }
 
-            // Si c'est une news ou autre contenu Steam, on utilise meta embed
             if (url.hostname.includes('steampowered.com')) {
                 return { type: 'meta' };
             }
@@ -410,10 +393,8 @@
             const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
             const path = url.pathname.toLowerCase();
 
-            // Vérifier l'extension du fichier
             const isImage = imageExtensions.some(ext => path.endsWith(ext));
 
-            // Vérifier les URLs d'images communes (Imgur, etc.)
             const imageHosts = ['i.imgur.com', 'cdn.discordapp.com', 'media.discordapp.net'];
             const isImageHost = imageHosts.some(host => url.hostname.includes(host));
 
@@ -429,7 +410,6 @@
         }
     };
 
-    // Gestionnaire des styles d'embed (seulement glass)
     const EmbedStyles = {
         'dark-glass': {
             background: 'rgba(255, 255, 255, 0.1)',
@@ -451,7 +431,6 @@
         }
     };
 
-    // Logos SVG pour les différentes plateformes
     const PlatformLogos = {
         youtube: `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
             <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
@@ -477,19 +456,16 @@
         </svg>`
     };
 
-    // Factory pour les embeds avec styles dynamiques
     class EmbedFactory {
         static async createEmbed(url) {
             const cleanHostname = url.hostname.replace('www.', '').toLowerCase();
             Logger.info(`Processing URL: ${url.href}`, `Hostname: ${cleanHostname}`);
 
-            // Vérification des paramètres utilisateur
             if (!USER_CONFIG.enableAllLinks) {
                 Logger.debug('All links disabled by user settings');
                 return null;
             }
 
-            // Détection d'image en premier
             const imageInfo = ContentDetectors.image(url);
             if (imageInfo.type === 'image' && USER_CONFIG.enableImageEmbeds) {
                 Logger.debug('Detected image URL, creating image embed');
@@ -839,7 +815,6 @@
                                 const parser = new DOMParser();
                                 const doc = parser.parseFromString(htmlText, 'text/html');
 
-                                // Meta info
                                 const meta = {
                                     title: doc.querySelector('meta[property="og:title"]')?.content
                                           || doc.querySelector('meta[name="twitter:title"]')?.content
@@ -854,17 +829,15 @@
                                          || null,
                                 };
 
-                                // Favicon GamesPlanet
                                 const faviconUrl = `${url.protocol}//${url.hostname}/favicon.ico`;
 
-                                // Prix uniquement si page de jeu
                                 const isGamePage = url.pathname.includes('/game/');
                                 let priceHtml = '';
                                 if (isGamePage) {
                                     const priceEl = doc.querySelector('.prices');
                                     if (priceEl) {
                                         const text = priceEl.textContent.trim();
-                                        const match = text.match(/([\d,.]+€)\s*-\s*(\d+%)\s*([\d,.]+€)/); // ex: 59,99€ -10% 53,99€
+                                        const match = text.match(/([\d,.]+€)\s*-\s*(\d+%)\s*([\d,.]+€)/);
                                         if (match) {
                                             const [_, oldPrice, discount, newPrice] = match;
                                             priceHtml = `<span class="price-old" style="text-decoration:line-through;color:#888;margin-right:4px;">${Utils.escapeHtml(oldPrice)}</span>
@@ -882,7 +855,6 @@
                                     platformName += ` × ${ref.charAt(0).toUpperCase()}${ref.slice(1)}`;
                                 }
 
-                                // Build l'embed
                                 const embedHtml = `
                                     <div class="embed-header">
                                         <div class="embed-platform-logo">
@@ -941,7 +913,6 @@
                                 const parser = new DOMParser();
                                 const doc = parser.parseFromString(htmlText, 'text/html');
 
-                                // Récupération des meta tags
                                 const meta = {
                                     title: doc.querySelector('meta[property="og:title"]')?.content
                                           || doc.querySelector('meta[name="twitter:title"]')?.content
@@ -958,10 +929,8 @@
                                            || url.hostname.replace('www.', ''),
                                 };
 
-                                // URL favicon classique
                                 const faviconUrl = `${url.protocol}//${url.hostname}/favicon.ico`;
 
-                                // Build l'embed
                                 const embedHtml = `
                                     <div class="embed-header">
                                         <div class="embed-platform-logo">
@@ -1201,7 +1170,6 @@
         }
     }
 
-    // Preloader pour les liens
     function createLinkPreloader(url) {
         const preloader = document.createElement('div');
         preloader.className = 'link-preloader coven-embed';
@@ -1235,7 +1203,6 @@
         return preloader;
     }
 
-    // Gestionnaire du chat avec régénération des embeds
     class ChatManager {
         constructor() {
             this.observer = null;
@@ -1249,7 +1216,6 @@
             Logger.info('Initializing chat manager...');
             this.findAndObserveChat();
 
-            // Backup polling
             this.backupInterval = setInterval(() => {
                 if (!this.currentContainer || !document.contains(this.currentContainer)) {
                     Logger.debug('Chat container lost, reinitializing...');
@@ -1290,7 +1256,6 @@
                 }
             }
 
-            // Fallback: chercher par structure
             const fallbackSelectors = [
                 '[class*="chat-scrollable-area"]',
                 '[class*="message-container"]',
@@ -1346,7 +1311,6 @@
             this.observer.observe(container, observerConfig);
             container.dataset.ptlObserved = true;
 
-            // Traiter les messages existants
             setTimeout(() => {
                 this.processExistingMessages(container);
             }, 1000);
@@ -1355,17 +1319,14 @@
         isValidMessageNode(node) {
             if (node.nodeType !== 1) return false;
 
-            // Vérifier si c'est un message de chat
             if (node.matches && node.matches(SELECTORS.message)) {
                 return true;
             }
 
-            // Vérifier si contient un message de chat
             if (node.querySelector && node.querySelector(SELECTORS.message)) {
                 return true;
             }
 
-            // Vérifier par structure
             if (node.classList && (
                 node.classList.contains('chat-line__message') ||
                 node.getAttribute('data-a-target') === 'chat-line-message'
@@ -1404,7 +1365,6 @@
                 }
 
                 try {
-                    // Vérifier si le lien a déjà été traité
                     if (link.dataset.ptlEmbed) {
                         Logger.debug('Link already processed, skipping');
                         continue;
@@ -1415,11 +1375,9 @@
 
                     Logger.debug(`Processing link: ${url.href}`);
 
-                    // Remplace par le preloader
                     const preloader = createLinkPreloader(url);
                     link.parentNode.replaceChild(preloader, link);
 
-                    // Crée l'embed
                     const embed = await EmbedFactory.createEmbed(url);
 
                     if (document.contains(preloader)) {
@@ -1427,7 +1385,6 @@
                             preloader.replaceWith(embed);
                             Logger.debug(`Embed created for: ${url.href}`);
                         } else {
-                            // Si l'embed est désactivé, remettre le lien original
                             const originalLink = document.createElement('a');
                             originalLink.href = url.href;
                             originalLink.textContent = url.href;
@@ -1438,7 +1395,6 @@
                     }
                 } catch (error) {
                     Logger.error('Error processing link:', error);
-                    // En cas d'erreur, remettre le lien original
                     if (document.body.contains(preloader)) {
                         const originalLink = document.createElement('a');
                         originalLink.href = link.href;
@@ -1475,7 +1431,6 @@
             }
         }
 
-        // NOUVELLE MÉTHODE : Régénérer tous les embeds du chat
         async regenerateAllEmbeds() {
             Logger.info('Regenerating all embeds in chat...');
 
@@ -1484,7 +1439,6 @@
                 return;
             }
 
-            // Récupérer tous les embeds existants
             const existingEmbeds = this.currentContainer.querySelectorAll('.coven-embed');
             Logger.debug(`Found ${existingEmbeds.length} embeds to regenerate`);
 
@@ -1500,17 +1454,14 @@
 
                     const url = new URL(originalUrl);
 
-                    // Vérifier si cet embed type est maintenant activé
                     const shouldRegenerate = this.shouldRegenerateEmbed(embedType, url);
 
                     if (shouldRegenerate) {
                         Logger.debug(`Regenerating embed for: ${originalUrl}`);
 
-                        // Créer un nouveau preloader
                         const preloader = createLinkPreloader(url);
                         embed.replaceWith(preloader);
 
-                        // Créer le nouvel embed
                         const newEmbed = await EmbedFactory.createEmbed(url);
 
                         if (document.contains(preloader)) {
@@ -1518,7 +1469,6 @@
                                 preloader.replaceWith(newEmbed);
                                 Logger.debug(`Embed regenerated for: ${originalUrl}`);
                             } else {
-                                // Remettre le lien original si l'embed n'est pas créé
                                 const originalLink = document.createElement('a');
                                 originalLink.href = originalUrl;
                                 originalLink.textContent = originalUrl;
@@ -1529,7 +1479,6 @@
                         }
                     } else {
                         Logger.debug(`Embed type ${embedType} disabled, converting to link`);
-                        // Convertir en lien simple
                         const originalLink = document.createElement('a');
                         originalLink.href = originalUrl;
                         originalLink.textContent = originalUrl;
@@ -1548,7 +1497,6 @@
             Logger.info('Embed regeneration completed');
         }
 
-        // Vérifier si un embed doit être régénéré basé sur les paramètres actuels
         shouldRegenerateEmbed(embedType, url) {
             const cleanHostname = url.hostname.replace('www.', '').toLowerCase();
 
@@ -1570,7 +1518,6 @@
                 case 'default':
                     return USER_CONFIG.enableAllLinks;
                 default:
-                    // Pour les types inconnus, vérifier par hostname
                     const hostConfigMap = {
                         'ko-fi.com': USER_CONFIG.enableKoFi,
                         'eneba.com': USER_CONFIG.enableEneba
@@ -1643,7 +1590,6 @@
         }
     }
 
-    // Système d'options avec régénération
     class OptionsManager {
         constructor() {
             this.modal = null;
@@ -2174,34 +2120,29 @@
         }
 
         saveOptions() {
-            // Style d'embed
             const embedStyle = this.modal.querySelector('input[name="embedStyle"]:checked')?.value;
             if (embedStyle) {
                 USER_CONFIG.embedStyle = embedStyle;
                 Storage.set('embedStyle', embedStyle);
             }
 
-            // Plateformes
             const platforms = ['enableYouTube', 'enableDiscord', 'enableTwitch', 'enableSteam'];
             platforms.forEach(platform => {
                 USER_CONFIG[platform] = this.modal.querySelector(`input[name="${platform}"]`)?.checked || false;
                 Storage.set(platform, USER_CONFIG[platform]);
             });
 
-            // Sites web
             const websites = ['enableGamesPlanet', 'enableKoFi', 'enableEneba', 'enableMeta'];
             websites.forEach(website => {
                 USER_CONFIG[website] = this.modal.querySelector(`input[name="${website}"]`)?.checked || false;
                 Storage.set(website, USER_CONFIG[website]);
             });
 
-            // Options générales
             USER_CONFIG.enableAllLinks = this.modal.querySelector('input[name="enableAllLinks"]')?.checked || false;
             USER_CONFIG.enableImages = this.modal.querySelector('input[name="enableImages"]')?.checked || false;
             USER_CONFIG.enableImageEmbeds = this.modal.querySelector('input[name="enableImageEmbeds"]')?.checked || false;
             USER_CONFIG.debugMode = this.modal.querySelector('input[name="debugMode"]')?.checked || false;
 
-            // Tailles d'images
             const maxImageWidth = parseInt(this.modal.querySelector('input[name="maxImageWidth"]')?.value) || 300;
             const maxImageHeight = parseInt(this.modal.querySelector('input[name="maxImageHeight"]')?.value) || 200;
             USER_CONFIG.maxImageWidth = Math.max(100, Math.min(800, maxImageWidth));
@@ -2214,20 +2155,16 @@
             Storage.set('maxImageWidth', USER_CONFIG.maxImageWidth);
             Storage.set('maxImageHeight', USER_CONFIG.maxImageHeight);
 
-            // Mettre à jour le mode debug du logger
             Logger.setDebugMode(USER_CONFIG.debugMode);
 
             this.closeOptionsModal();
             Logger.info('Options saved successfully', USER_CONFIG);
 
-            // Régénérer tous les embeds avec les nouveaux paramètres
             this.regenerateAllEmbeds();
 
-            // Afficher la confirmation
             this.showSaveConfirmation();
         }
 
-        // NOUVELLE MÉTHODE : Régénérer tous les embeds
         async regenerateAllEmbeds() {
             Logger.info('Starting embed regeneration with new settings...');
 
@@ -2335,7 +2272,6 @@
         }
     }
 
-    // Injection des styles
     function injectStyles() {
         const styleSheet = document.createElement("style");
         styleSheet.textContent = optimizedStyles;
@@ -2343,22 +2279,19 @@
         Logger.info('Styles injected');
     }
 
-    // Initialisation
     function initializeExtension() {
         if (isInitialized) {
             Logger.debug('Extension already initialized');
             return;
         }
 
-        Logger.info('Initializing Twitch Chat Link Embedder Pro v2.5.1...');
+        Logger.info('Initializing Twitch Chat Link Embedder Pro v2.5.2...');
 
         injectStyles();
 
-        // Initialiser le gestionnaire d'options
         const optionsManager = new OptionsManager();
         optionsManager.init();
 
-        // Initialiser le gestionnaire de chat
         window.chatManager = new ChatManager();
         window.chatManager.init();
 
@@ -2366,14 +2299,12 @@
         Logger.info('Twitch Chat Link Embedder Pro initialized successfully');
     }
 
-    // Démarrer l'extension
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initializeExtension);
     } else {
         setTimeout(initializeExtension, 1000);
     }
 
-    // Styles CSS (identique à votre version précédente)
     const optimizedStyles = `
         .coven-embed {
             contain: layout style paint;
@@ -2399,7 +2330,6 @@
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         }
 
-        /* Header avec logo et nom de la plateforme */
         .embed-header {
             display: flex;
             align-items: center;
@@ -2441,7 +2371,6 @@
             50% { opacity: 0.7; }
         }
 
-        /* Corps de l'embed */
         .embed-body {
             display: flex;
             gap: 12px;
@@ -2456,7 +2385,6 @@
   flex-direction: column;
 }
 
-        /* Miniatures */
         .embed-thumbnail {
             width: 120px;
             flex-shrink: 0;
@@ -2498,7 +2426,6 @@
             border: 2px solid rgba(255, 255, 255, 0.8);
         }
 
-        /* Contenu */
         .embed-content {
             flex: 1;
             min-width: 0;
@@ -2569,7 +2496,6 @@
             opacity: 0.7;
         }
 
-        /* Images */
         .embed-image-container {
             width: 100%;
             display: flex;
@@ -2598,7 +2524,6 @@
             padding: 20px;
         }
 
-        /* Preloader */
         .link-preloader {
             border-radius: 12px;
             padding: 0;
@@ -2638,7 +2563,6 @@
             word-break: break-all;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .embed-body {
                 flex-direction: column;
@@ -2671,7 +2595,6 @@
             }
         }
 
-        /* Compatibilité chat Twitch */
         .chat-line__message .coven-embed,
         [data-a-target="chat-line-message"] .coven-embed,
         .twitch-chat .coven-embed,
@@ -2701,7 +2624,6 @@
             max-width: 100% !important;
         }
 
-        /* Styles pour le modal d'options */
         .twitch-embed-options-modal * {
             box-sizing: border-box;
         }
