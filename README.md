@@ -26,6 +26,14 @@ Il gère :
 
 ---
 
+## Avertissement
+
+Twitch peut mettre à jour son interface ou son CSS à tout moment.  
+Si le script ne fonctionne plus (ex. les embeds ne s’affichent plus dans le chat), **c’est probablement dû à un changement de classe dans le chat**.  
+Dans ce cas, il faudra attendre que l’auteur corrige le script en ajoutant la nouvelle classe pour le chat.  
+
+---
+
 ## Restrictions
 
 - Le script est **propriétaire et non modifiable**.  
