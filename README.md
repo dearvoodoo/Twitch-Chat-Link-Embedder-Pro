@@ -21,7 +21,7 @@ Il gère :
 ## Installation
 
 1. Installer Tampermonkey sur votre navigateur : [https://www.tampermonkey.net/](https://www.tampermonkey.net/)  
-2. Installer le script via l’URL brute GitHub :  https://raw.githubusercontent.com/tonpseudo/tonrepo/main/Twitch%20Chat%20Link%20Embedder%20Pro.user.js
+2. Installer le script via l’URL brute GitHub :  https://raw.githubusercontent.com/dearvoodoo/Twitch-Chat-Link-Embedder-Pro/main/Twitch%20Chat%20Link%20Embedder%20Pro.user.js
 3. Tampermonkey se chargera de gérer les mises à jour automatiques.
 
 ---
