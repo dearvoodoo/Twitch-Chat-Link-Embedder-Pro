@@ -45,6 +45,19 @@ Le script Twitch Chat Link Embedder Pro gère également toutes les autres URLs 
 
 ---
 
+## TO-DO
+
+- Twitch
+  - drops inventory link: https://www.twitch.tv/drops/inventory
+  - Twitch VOD link: https://www.twitch.tv/videos/2615559931
+- Instant Gaming support
+- Fully Eneba support
+  - Custom embeds with price
+- Fully Ko-fi support
+
+
+---
+
 ## Restrictions
 
 - Le script est **propriétaire et non modifiable**.  
