@@ -34,6 +34,16 @@ Dans ce cas, il faudra attendre que l’auteur corrige le script en ajoutant la 
 
 ---
 
+## Preview
+
+Exemples de preview : les captures ci-dessous montrent des liens YouTube, Twitch et GamesPlanet.
+Le script Twitch Chat Link Embedder Pro gère également toutes les autres URLs comme Ko-fi, Discord, ainsi que les liens d’images.
+![Logo Twitch Chat Link Embedder Pro](https://raw.githubusercontent.com/dearvoodoo/Twitch-Chat-Link-Embedder-Pro/main/images/Twitch-Chat-Link-Embedder-Pro_preview-twitch.png)
+![Logo Twitch Chat Link Embedder Pro](https://raw.githubusercontent.com/dearvoodoo/Twitch-Chat-Link-Embedder-Pro/main/images/Twitch-Chat-Link-Embedder-Pro_preview-youtube.png)
+![Logo Twitch Chat Link Embedder Pro](https://raw.githubusercontent.com/dearvoodoo/Twitch-Chat-Link-Embedder-Pro/main/images/Twitch-Chat-Link-Embedder-Pro_preview-gamesplanet.png)
+
+---
+
 ## Restrictions
 
 - Le script est **propriétaire et non modifiable**.  
