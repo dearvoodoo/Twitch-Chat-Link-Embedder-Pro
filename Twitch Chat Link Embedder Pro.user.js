@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Chat Link Embedder Pro
 // @namespace    http://tampermonkey.net/
-// @version      2.5.2
+// @version      2.5.3
 // @description  Transforme les liens du chat Twitch en embeds propres et interactifs.
 // @author       VooDoo
 // @match        *://*.twitch.tv/*
@@ -349,6 +349,10 @@
 
         twitch(url) {
             const path = url.pathname;
+
+            if (/^\/drops\/inventory\/?$/i.test(path)) {
+                return { type: 'drop', id: 666};
+            }
 
             if (url.hostname === 'subs.twitch.tv') {
                 const subMatch = path.match(/^\/([a-zA-Z0-9_]+)$/i);
@@ -751,7 +755,56 @@
                         `, 'twitch', url);
 
                     case 'video':
-                        return this.createDefaultEmbed(url);
+                        api_url = `${CONFIG.EMBED_API_URL}/twitch/video?id=${contentInfo.id}`;
+                        data = await requestManager.fetchWithCache(api_url);
+                        if (!data) return null;
+
+                        return this._buildEmbed(`
+                            <div class="embed-header">
+                                <div class="embed-platform-logo">
+                                    ${PlatformLogos.twitch}
+                                </div>
+                                <div class="embed-platform-name">Twitch - VOD</div>
+                            </div>
+                            <div class="embed-body">
+                                <div class="embed-thumbnail">
+                                    <img src="${data.video.thumbnail_url}" loading="lazy">
+                                    <div class="embed-play-button">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                                            <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="embed-content">
+                                    <div class="embed-title">${Utils.escapeHtml(data.video.title)}</div>
+                                    <div class="embed-details">
+                                        <div class="embed-channel">${Utils.escapeHtml(data.video.user_name)}</div>
+                                        <div class="embed-stats">
+                                            <span class="embed-stat">${Utils.formatNumber(data.video.view_count)} vues</span>
+                                            <span class="embed-stat">${data.video.duration}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `, 'twitch', url);
+
+                    case 'drop':
+                        return this._buildEmbed(`
+                            <div class="embed-header">
+                                <div class="embed-platform-logo">
+                                    ${PlatformLogos.twitch}
+                                </div>
+                                <div class="embed-platform-name">Twitch - DROP</div>
+                            </div>
+                            <div class="embed-body">
+                                <div class="embed-content">
+                                    <div class="embed-title">Twitch Drop Inventory</div>
+                                    <div class="embed-details">
+                                        <div class="embed-description">Consulte ton inventaire de drops Twitch et récupère les récompenses que tu as gagnées sur les streams.</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `, 'twitch', url);
                 }
             } catch (error) {
                 Logger.error('Twitch Embed Failed:', error);
