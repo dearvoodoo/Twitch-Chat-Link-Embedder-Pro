@@ -2,7 +2,7 @@
 
 **Auteur :** VooDoo  
 **Site officiel :** [https://the-coven.fr](https://the-coven.fr)  
-**Version :** 2.5.1 
+**Version :** 2.5.2
 
 ---
 
