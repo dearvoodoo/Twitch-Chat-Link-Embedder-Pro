@@ -1,2 +1,35 @@
-# Twitch-Chat-Link-Embedder-Pro
-Twitch Chat Link Embedder Pro est un script Tampermonkey qui transforme automatiquement les liens postés dans le chat Twitch en embeds propres et interactifs. 
+# Twitch Chat Link Embedder Pro
+
+**Auteur :** VooDoo  
+**Site officiel :** [https://the-coven.fr](https://the-coven.fr)  
+**Version :** 2.5.1 
+
+---
+
+## Description
+
+Twitch Chat Link Embedder Pro est un script Tampermonkey qui transforme automatiquement les liens postés dans le chat Twitch en embeds propres et interactifs.  
+
+Il gère :  
+- Les liens Steam, GamesPlanet, YouTube, etc.  
+- Les images avec preview  
+- Les métadonnées et les prix sur les pages de jeu  
+- Les favicon pour chaque plateforme  
+
+---
+
+## Installation
+
+1. Installer Tampermonkey sur votre navigateur : [https://www.tampermonkey.net/](https://www.tampermonkey.net/)  
+2. Installer le script via l’URL brute GitHub :  https://raw.githubusercontent.com/tonpseudo/tonrepo/main/Twitch%20Chat%20Link%20Embedder%20Pro.user.js
+3. Tampermonkey se chargera de gérer les mises à jour automatiques.
+
+---
+
+## Restrictions
+
+- Le script est **propriétaire et non modifiable**.  
+- Vous **n’avez pas le droit de copier, redistribuer, modifier ou utiliser ce script** à d’autres fins.  
+- Tout usage doit se limiter à l’utilisation personnelle via Tampermonkey.  
+
+Pour toute question ou contact : [https://the-coven.fr](https://the-coven.fr)
