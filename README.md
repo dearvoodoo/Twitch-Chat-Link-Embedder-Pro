@@ -51,7 +51,13 @@ Le script Twitch Chat Link Embedder Pro gère également toutes les autres URLs 
 - Fully Eneba support
   - Custom embeds with price
 - Fully Ko-fi support
-
+- Tiktok Support
+- Bluesky Support
+- X Support
+- Instagram support
+- Ubisoft support
+- Playstation support
+- Xbox support
 
 ---
 
