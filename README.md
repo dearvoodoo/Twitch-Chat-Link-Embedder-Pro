@@ -2,7 +2,7 @@
 
 **Auteur :** VooDoo  
 **Site officiel :** [https://the-coven.fr](https://the-coven.fr)  
-**Version :** 2.5.2
+**Version :** 2.5.3
 
 ---
 
@@ -47,9 +47,6 @@ Le script Twitch Chat Link Embedder Pro gère également toutes les autres URLs 
 
 ## TO-DO
 
-- Twitch
-  - drops inventory link: https://www.twitch.tv/drops/inventory
-  - Twitch VOD link: https://www.twitch.tv/videos/2615559931
 - Instant Gaming support
 - Fully Eneba support
   - Custom embeds with price
