@@ -1,0 +1,11 @@
+Twitch Chat Link Embedder Pro
+Copyright (c) 2025 VooDoo
+
+Tous droits réservés.  
+
+Ce script est propriétaire. L'utilisateur final n'a aucun droit de :
+- Copier, modifier, adapter, traduire, ou créer des œuvres dérivées
+- Distribuer, vendre, louer, prêter ou transférer le script
+- Décompiler, désassembler, ou tenter d'extraire le code source
+
+Le script est fourni uniquement pour un usage personnel via Tampermonkey.
