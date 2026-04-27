@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Chat Link Embedder Pro
 // @namespace    http://tampermonkey.net/
-// @version      2.6.0
+// @version      2.6.1
 // @description  Transforme les liens du chat Twitch en embeds propres et interactifs.
 // @author       VooDoo
 // @match        *://*.twitch.tv/*
@@ -22,7 +22,7 @@
     //  CONFIG
     // ─────────────────────────────────────────────
     const SCRIPT_NAME    = 'Twitch Chat Link Embedder Pro';
-    const SCRIPT_VERSION = '2.6.0';
+    const SCRIPT_VERSION = '2.6.1';
 
     const CONFIG = {
         EMBED_API_URL:          'https://api.the-coven.fr',
@@ -208,9 +208,9 @@
             }
 
             const p = this._doFetch(url, options, parseAs)
-                .then(data => { this.cache.set(key, { timestamp: Date.now(), data }); return data; })
-                .catch(err => { this.failedReqs.set(key, { timestamp: Date.now() }); throw err; })
-                .finally(() => this.pendingReqs.delete(key));
+            .then(data => { this.cache.set(key, { timestamp: Date.now(), data }); return data; })
+            .catch(err => { this.failedReqs.set(key, { timestamp: Date.now() }); throw err; })
+            .finally(() => this.pendingReqs.delete(key));
 
             this.pendingReqs.set(key, p);
             return p;
@@ -330,7 +330,7 @@
             const path   = url.pathname.toLowerCase();
             const isExt  = exts.some(e => path.endsWith(e));
             const isHost = ['i.imgur.com', 'cdn.discordapp.com', 'media.discordapp.net']
-                .some(h => url.hostname.includes(h));
+            .some(h => url.hostname.includes(h));
             if (isExt || isHost) return { type: 'image', url: url.href };
             return { type: 'unknown' };
         },
@@ -525,8 +525,8 @@
                 );
                 if (!data?.guild) return null;
                 const icon = data.guild.icon
-                    ? Utils.sanitizeUrl(`https://cdn.discordapp.com/icons/${data.guild.id}/${data.guild.icon}.png`)
-                    : '';
+                ? Utils.sanitizeUrl(`https://cdn.discordapp.com/icons/${data.guild.id}/${data.guild.icon}.png`)
+                : '';
                 return this._build(`
                     <div class="embed-header">
                         <div class="embed-platform-logo">${PlatformLogos.discord}</div>
@@ -985,7 +985,7 @@
             if (node.matches?.(SELECTORS.message)) return true;
             if (node.querySelector?.(SELECTORS.message)) return true;
             return node.classList?.contains('chat-line__message') ||
-                   node.getAttribute?.('data-a-target') === 'chat-line-message';
+                node.getAttribute?.('data-a-target') === 'chat-line-message';
         }
 
         async _processBatch(nodes) {
@@ -1123,7 +1123,7 @@
             </div>`;
             container.firstChild
                 ? container.insertBefore(banner, container.firstChild)
-                : container.appendChild(banner);
+            : container.appendChild(banner);
             setTimeout(() => {
                 banner.style.opacity    = '0';
                 banner.style.transition = 'opacity 1s';
@@ -1167,36 +1167,36 @@
 
         _addButton() {
             if (document.querySelector('[data-twitch-embed-options]')) return;
-            const container = document.querySelector(SELECTORS.chatButtons);
-            if (!container) return;
+
+            // Cibler le container des icônes navbar (Prime, Notifs, Whispers...)
+            const navContainer = document.querySelector('.Layout-sc-1xcs6mc-0.bZYcrx');
+            if (!navContainer) return;
 
             const btn = Utils.createElement(`
-                <div class="Layout-sc-1xcs6mc-0 cUmVME">
-                    <div class="InjectLayout-sc-1i43xsx-0 iDMNUO">
-                        <button class="ScCoreButton-sc-ocjdkq-0 iPkwTD ScButtonIcon-sc-9yap0r-0 dcNXJO"
-                                data-twitch-embed-options aria-label="Embed Options">
-                            <div class="ButtonIconFigure-sc-1emm8lf-0 lnTwMD">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
-                                     fill="none" stroke="currentColor" stroke-width="2"
-                                     stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 21"/>
-                                    <path d="m14 19.5 3-3 3 3"/><path d="M17 22v-5.5"/>
-                                    <circle cx="9" cy="9" r="2"/>
+        <div class="Layout-sc-1xcs6mc-0 VxLcr">
+            <div class="Layout-sc-1xcs6mc-0 bkOPih">
+                <div class="InjectLayout-sc-1i43xsx-0 iDMNUO">
+                    <button class="ScCoreButton-sc-ocjdkq-0 glPhvE ScButtonIcon-sc-9yap0r-0 dgVYJo"
+                            data-twitch-embed-options aria-label="Embed Options" title="Twitch Chat Link Embedder Pro">
+                        <div class="ButtonIconFigure-sc-1emm8lf-0 lnTwMD">
+                            <div class="ScSvgWrapper-sc-wkgzod-0 kccyMt tw-svg">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4 5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4Zm0 2h16v10H4V7Zm2 2v2h2V9H6Zm4 0v2h2V9h-2Zm4 0v2h4V9h-4Zm-8 4v2h4v-2H6Zm6 0v2h6v-2h-6Z" clip-rule="evenodd"/>
                                 </svg>
                             </div>
-                        </button>
-                    </div>
-                </div>`);
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>`);
 
-            const settings = container.querySelector(SELECTORS.chatSettings);
-            settings?.parentNode?.parentNode
-                ? settings.parentNode.parentNode.insertBefore(btn, settings.parentNode)
-                : container.appendChild(btn);
+            // Insérer en premier dans le container navbar
+            navContainer.insertBefore(btn, navContainer.firstChild);
 
             btn.querySelector('button').addEventListener('click', e => {
                 e.preventDefault(); e.stopPropagation(); this.open();
             });
-            Logger.info('Options button injected');
+            Logger.info('Options button injected in navbar');
         }
 
         // ── Modal ────────────────────────────────
@@ -1844,29 +1844,29 @@
         Logger.info('Styles injected');
     }
 
-    // ─────────────────────────────────────────────
-    //  INIT
-    // ─────────────────────────────────────────────
-    let isInitialized = false;
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+let isInitialized = false;
 
-    function init() {
-        if (isInitialized) return;
-        Logger.info(`Initializing ${SCRIPT_NAME} v${SCRIPT_VERSION}…`);
+function init() {
+    if (isInitialized) return;
+    Logger.info(`Initializing ${SCRIPT_NAME} v${SCRIPT_VERSION}…`);
 
-        injectStyles();
+    injectStyles();
 
-        const optionsManager = new OptionsManager();
-        optionsManager.init();
+    const optionsManager = new OptionsManager();
+    optionsManager.init();
 
-        window.chatManager = new ChatManager();
-        window.chatManager.init();
+    window.chatManager = new ChatManager();
+    window.chatManager.init();
 
-        isInitialized = true;
-        Logger.info('Ready ✓');
-    }
+    isInitialized = true;
+    Logger.info('Ready ✓');
+}
 
-    document.readyState === 'loading'
-        ? document.addEventListener('DOMContentLoaded', init)
-        : setTimeout(init, 1000);
+document.readyState === 'loading'
+    ? document.addEventListener('DOMContentLoaded', init)
+: setTimeout(init, 1000);
 
 })();
